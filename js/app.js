@@ -1,93 +1,125 @@
 document
 .getElementById("dataAnakForm")
-.addEventListener(
-"submit",
-function(e){
+.addEventListener("submit", function(event){
+
+    event.preventDefault();
 
 
-e.preventDefault();
+    // Ambil input
+    const nama =
+    document.getElementById("nama").value;
 
 
-let nama =
-document.getElementById("nama").value;
+    const tanggalLahir =
+    document.getElementById("tanggalLahir").value;
 
 
-let lahir =
-document.getElementById("tanggalLahir").value;
+    const jenisKelamin =
+    document.getElementById("jenisKelamin").value;
 
 
-let jk =
-document.getElementById("jenisKelamin").value;
+    const berat =
+    parseFloat(document.getElementById("berat").value);
 
 
-let berat =
-parseFloat(
-document.getElementById("berat").value
-);
-
-
-let tinggi =
-parseFloat(
-document.getElementById("tinggi").value
-);
+    const tinggi =
+    parseFloat(document.getElementById("tinggi").value);
 
 
 
-let umur =
-hitungUmur(lahir);
+    // Hitung umur
+    const umurBulan =
+    hitungUmurBulan(tanggalLahir);
 
 
 
-let hasil =
-analisisAntropometri(
-berat,
-tinggi,
-umur,
-jk
-);
+    // Hitung IMT
+    const tinggiMeter =
+    tinggi / 100;
+
+
+    const imt =
+    berat / (tinggiMeter * tinggiMeter);
 
 
 
-document
-.getElementById("hasil")
-.innerHTML=`
-
-<h3>Hasil Pemeriksaan</h3>
-
-Nama :
-${nama}
-
-<br>
-
-Umur :
-${umur} bulan
-
-<hr>
+    // Ambil status antropometri
+    const hasilBBU =
+    cekBBU(berat, umurBulan, jenisKelamin);
 
 
-BB/U :
-${hasil.BB_U.status}
-(Z=${hasil.BB_U.z})
+    const hasilTBU =
+    cekTBU(tinggi, umurBulan, jenisKelamin);
 
 
-<br><br>
+    const hasilBBTB =
+    cekBBTB(berat, tinggi, jenisKelamin);
 
 
-TB/U :
-${hasil.TB_U.status}
-(Z=${hasil.TB_U.z})
+    const hasilIMTU =
+    cekIMTU(imt, umurBulan, jenisKelamin);
 
 
-<br><br>
+
+    // Tampilkan hasil
+
+    document
+    .getElementById("hasil")
+    .innerHTML = `
+
+    <h3>Hasil Pemeriksaan</h3>
+
+    <p>
+    Nama: ${nama}
+    </p>
+
+    <p>
+    Umur: ${umurBulan} bulan
+    </p>
+
+    <p>
+    Berat:
+    ${berat} kg
+    </p>
+
+    <p>
+    Tinggi:
+    ${tinggi} cm
+    </p>
+
+    <p>
+    IMT:
+    ${imt.toFixed(2)}
+    </p>
 
 
-IMT/U :
-${hasil.IMT_U.status}
-(Z=${hasil.IMT_U.z})
+    <hr>
 
 
-`;
+    <p>
+    BB/U:
+    <b>${hasilBBU}</b>
+    </p>
 
+
+    <p>
+    TB/U:
+    <b>${hasilTBU}</b>
+    </p>
+
+
+    <p>
+    BB/TB:
+    <b>${hasilBBTB}</b>
+    </p>
+
+
+    <p>
+    IMT/U:
+    <b>${hasilIMTU}</b>
+    </p>
+
+    `;
 
 
 });
@@ -95,232 +127,125 @@ ${hasil.IMT_U.status}
 
 
 
-// ===================
-// UMUR
-// ===================
+// ==========================
+// Fungsi umur
+// ==========================
 
-function hitungUmur(tanggal){
+function hitungUmurBulan(tglLahir){
 
-let lahir =
-new Date(tanggal);
-
-
-let sekarang =
-new Date();
+    const lahir =
+    new Date(tglLahir);
 
 
-let bulan =
-(
-sekarang.getFullYear()
--
-lahir.getFullYear()
-)
-*12;
+    const sekarang =
+    new Date();
 
 
-bulan +=
-sekarang.getMonth()
--
-lahir.getMonth();
+    let bulan =
+    (sekarang.getFullYear()
+    - lahir.getFullYear()) * 12;
 
 
-return bulan;
-
-}
-
-
+    bulan +=
+    sekarang.getMonth()
+    - lahir.getMonth();
 
 
-// ===================
-// REFERENSI WHO
-// ===================
+    if(
+        sekarang.getDate()
+        <
+        lahir.getDate()
+    ){
+        bulan--;
+    }
 
 
-function cariReferensi(
-parameter,
-umur,
-jk
-){
-
-let data =
-WHO_DATABASE[jk][parameter];
-
-
-return data.reduce(
-(a,b)=>
-
-Math.abs(b.umur-umur)
-<
-Math.abs(a.umur-umur)
-?
-b
-:
-a
-
-);
+    return bulan;
 
 }
 
 
 
+// ==========================
+// Database sementara
+// ==========================
+
+const databaseAntropometri = {
+
+    laki:{
+        BB_U:[],
+        TB_U:[],
+        BB_TB:[],
+        IMT_U:[]
+    },
 
 
-function hitungZ(
-nilai,
-median,
-sd
-){
-
-return(
-nilai-median
-)/sd;
-
-}
-
-
-
-
-
-function analisisAntropometri(
-berat,
-tinggi,
-umur,
-jk
-){
-
-
-let bb =
-cariReferensi(
-"BB_U",
-umur,
-jk
-);
-
-
-let tb =
-cariReferensi(
-"TB_U",
-umur,
-jk
-);
-
-
-
-let imt =
-berat /
-(
-(tinggi/100)
-*
-(tinggi/100)
-);
-
-
-
-let imtRef =
-cariReferensi(
-"IMT_U",
-umur,
-jk
-);
-
-
-
-let zBB =
-hitungZ(
-berat,
-bb.median,
-bb.sd
-);
-
-
-let zTB =
-hitungZ(
-tinggi,
-tb.median,
-tb.sd
-);
-
-
-let zIMT =
-hitungZ(
-imt,
-imtRef.median,
-imtRef.sd
-);
-
-
-
-return{
-
-
-BB_U:{
-z:zBB.toFixed(2),
-status:kategoriBBU(zBB)
-},
-
-
-TB_U:{
-z:zTB.toFixed(2),
-status:kategoriTBU(zTB)
-},
-
-
-IMT_U:{
-z:zIMT.toFixed(2),
-status:kategoriIMTU(zIMT)
-}
+    perempuan:{
+        BB_U:[],
+        TB_U:[],
+        BB_TB:[],
+        IMT_U:[]
+    }
 
 };
 
 
-}
+
+// ==========================
+// Fungsi status sementara
+// ==========================
+
+function cekBBU(bb, umur, jk){
+
+    /*
+    Nanti diganti
+    pencarian Z-score WHO
+    */
+
+    if(bb < 5)
+        return "Berat sangat kurang";
 
 
-
-
-
-function kategoriBBU(z){
-
-if(z<-3)
-return"Sangat kurang";
-
-if(z<-2)
-return"Kurang";
-
-if(z<=1)
-return"Normal";
-
-return"Risiko lebih";
-
-}
-
-
-
-function kategoriTBU(z){
-
-if(z<-3)
-return"Sangat pendek";
-
-if(z<-2)
-return"Pendek";
-
-return"Normal";
+    return "Normal";
 
 }
 
 
 
-function kategoriIMTU(z){
+function cekTBU(tb, umur, jk){
 
-if(z<-3)
-return"Sangat kurus";
+    if(tb < 50)
+        return "Sangat pendek";
 
-if(z<-2)
-return"Kurus";
 
-if(z<=1)
-return"Normal";
+    return "Normal";
 
-return"Gemuk";
+}
+
+
+
+function cekBBTB(bb,tb,jk){
+
+    const nilai =
+    bb / ((tb/100)*(tb/100));
+
+
+    if(nilai < 13)
+        return "Kurus";
+
+
+    return "Normal";
+
+}
+
+
+
+function cekIMTU(imt,umur,jk){
+
+    if(imt < 14)
+        return "Kurus";
+
+
+    return "Normal";
 
 }
